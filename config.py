@@ -3,7 +3,7 @@ import subprocess
 import sys
 
 
-conda_env_name = "DiffusionTraining2"
+conda_env_name = "DiffusionTraining"
 
 def main():
     conda_libraries = ['pandas','numpy','h5py','xarray','ipykernel','matplotlib','pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia']  # Add more libraries as needed
@@ -23,5 +23,3 @@ def conda_install(conda_libraries):
 
 
 main()
-
-#conda activate DiffusionTraining
