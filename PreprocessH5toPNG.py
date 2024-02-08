@@ -10,7 +10,7 @@ datadir2 = '/nfsscratch/Users/wndrsn/2019_atl02'
 datadir4 = '/nfsscratch/Users/wndrsn/2019_atl04'
 datafiles2 = sorted(glob.glob(os.path.join(datadir2, "*.h5")))
 datafiles4 = sorted(glob.glob(os.path.join(datadir4, "*.h5")))
-for i in range(5,len(datafiles2)):
+for i in range(len(datafiles2)):
   file_out = f"{os.path.splitext(os.path.basename(datafiles2[i]))[0]}.png"
   print("Loading: ", datafiles2[i])
   data = h5py.File(datafiles2[i], 'r')
