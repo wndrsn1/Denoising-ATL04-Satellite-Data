@@ -1,25 +1,29 @@
 import os
 import glob
 import h5py
-import tqdm
-import datetime as DT
+from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
-
+import zipfile
 datadir2 = '/nfsscratch/Users/wndrsn/2019_atl02'
 datadir4 = '/nfsscratch/Users/wndrsn/2019_atl04'
+save_path = '/nfsscratch/Users/wndrsn/saved_pngs'
 datafiles2 = sorted(glob.glob(os.path.join(datadir2, "*.h5")))
 datafiles4 = sorted(glob.glob(os.path.join(datadir4, "*.h5")))
-for i in range(len(datafiles2)):
+if not os.path.exists(save_path):
+  os.makedirs(save_path)
+  print(f"Created directory: {save_path}")
+zip_path = '/Users/wndrsn'
+for i in tqdm(range(4)):
   file_out = f"{os.path.splitext(os.path.basename(datafiles2[i]))[0]}.png"
-  print("Loading: ", datafiles2[i])
+  
   data = h5py.File(datafiles2[i], 'r')
   atm = {k: np.array(data[f'/atlas/pce1/atmosphere_s/{k}']) for k in data['/atlas/pce1/atmosphere_s'].keys()}
   atm_bins = atm['atm_bins']
   n_records = atm_bins.shape[0]
   data.close()
   # def get_atl04():
-  print("Loading: ", datafiles4[i])
+  
   data = h5py.File(datafiles4[i], 'r')
   nrb = np.array(data['profile_1/nrb_profile'])
   backg_select = np.array(data['ancillary_data/atmosphere/backg_select'])
@@ -39,8 +43,14 @@ for i in range(len(datafiles2)):
   r2 = (r/1000)**2
   #plt.imshow(atm_bins.T, aspect='auto', cmap='nipy_spectral', vmin=0, vmax=2000)
   plt.imshow(atm_bins_back.T, aspect='auto', cmap='nipy_spectral', vmin=0, vmax=2000)
-  plt.colorbar()
-  plt.savefig(f'/Users/wndrsn/{file_out}')
+  plt.savefig(os.path.join(save_path,file_out))
   print(f'Saved {file_out}')
-  break
-  
+
+
+# Create a ZIP file containing the saved PNGs using glob
+zip_filename = 'saved_pngs.zip'
+with zipfile.ZipFile(zip_filename, 'w') as zipf:
+    for file_path in glob.glob(os.path.join(save_path, "*.png")):
+        zipf.write(file_path, os.path.relpath(file_path, save_path))
+
+print(f"Saved PNGs compressed to {zip_filename}")
