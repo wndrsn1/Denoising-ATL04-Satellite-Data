@@ -18,6 +18,20 @@ def gps_to_datetime(gps_seconds):
     gps_time = gps_epoch + timedelta(seconds=gps_seconds)
     return gps_time
 
+def make_noisy(df,noise_level):
+    noise_level = noise_level*100
+    noisy_bg = np.full_like(df, noise_level)
+
+    noisy_dataset = df + noisy_bg
+
+    noisy = np.random.poisson(np.maximum(noisy_dataset, 0))
+
+    bgN = noisy.mean(axis=1, keepdims=True)
+
+    atm_bins_mybackg = noisy - bgN
+    
+    return atm_bins_mybackg
+
 def read_in_atl02(file):
     try:
         atl02 = pd.DataFrame()
@@ -74,9 +88,7 @@ def make_dfs(file, df):
                 save_dataframe_to_tensor_file(night_dataset, night_save_path)
                 
                 noisy_save_path = f'/nfsscratch/Users/wndrsn/atl02Torch/{os.path.basename(file).replace(".h5", "")}_{i}_noisy.pth'
-                noisy_bg = np.full_like(night_dataset,40) 
-                noisy_dataset = night_dataset + noisy_bg
-                noisy_dataset = np.random.poisson(np.maximum(noisy_dataset,0))
+                noisy_dataset = make_noisy(night_dataset,4)
                 save_dataframe_to_tensor_file(noisy_dataset,noisy_save_path)
                 
                 bg_dataset = noisy_dataset.mean(axis=1, keepdims=True)
