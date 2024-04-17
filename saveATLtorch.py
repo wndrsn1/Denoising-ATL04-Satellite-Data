@@ -59,12 +59,8 @@ def get_back(df):
     return pd.DataFrame(atm_mean)
 
 def save_dataframe_to_tensor_file(df, file_path):
-    df = pd.DataFrame(df)
-    # Convert DataFrame to PyTorch tensor
-    tensor_data = torch.tensor(df.values)
-    
     # Save tensor and column names to file
-    torch.save(tensor_data, file_path)
+    np.save(file_path,np.array(df))
 
 def make_dfs(file, df):
     night_data = []
@@ -83,16 +79,16 @@ def make_dfs(file, df):
             if is_night is True:
                 i += 1
                 # If we were in night, start a new day DataFrame
-                night_save_path = f'/nfsscratch/Users/wndrsn/atl02Torch/{os.path.basename(file).replace(".h5", "")}_{i}_night.pth'
+                night_save_path = f'/nfsscratch/Users/wndrsn/atl02Torch/{os.path.basename(file).replace(".h5", "")}_{i}_night.npy'
                 night_dataset = pd.DataFrame(night_data[-1])
                 save_dataframe_to_tensor_file(night_dataset, night_save_path)
                 
-                noisy_save_path = f'/nfsscratch/Users/wndrsn/atl02Torch/{os.path.basename(file).replace(".h5", "")}_{i}_noisy.pth'
+                noisy_save_path = f'/nfsscratch/Users/wndrsn/atl02Torch/{os.path.basename(file).replace(".h5", "")}_{i}_noisy.npy'
                 noisy_dataset = make_noisy(night_dataset,4)
                 save_dataframe_to_tensor_file(noisy_dataset,noisy_save_path)
                 
                 bg_dataset = noisy_dataset.mean(axis=1, keepdims=True)
-                bg_save_path = f'/nfsscratch/Users/wndrsn/atl02Torch/{os.path.basename(file).replace(".h5", "")}_{i}_bg.pth'
+                bg_save_path = f'/nfsscratch/Users/wndrsn/atl02Torch/{os.path.basename(file).replace(".h5", "")}_{i}_bg.npy'
                 save_dataframe_to_tensor_file(bg_dataset, bg_save_path)
                 
             is_night = False
