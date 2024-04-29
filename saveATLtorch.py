@@ -25,12 +25,8 @@ def make_noisy(df,noise_level):
     noisy_dataset = df + noisy_bg
 
     noisy = np.random.poisson(np.maximum(noisy_dataset, 0))
-
-    bgN = noisy.mean(axis=1, keepdims=True)
-
-    atm_bins_mybackg = noisy - bgN
     
-    return atm_bins_mybackg
+    return noisy
 
 def read_in_atl02(file):
     try:
@@ -49,10 +45,8 @@ def getBins(file):
     with h5py.File(file, 'r') as data:
         atm = {k: np.array(data[f'/atlas/pce1/atmosphere_s/{k}']) for k in data['/atlas/pce1/atmosphere_s'].keys()}
         atm_bins = atm['atm_bins']
-        n_records = atm_bins.shape[0]
-        atm_mean = atm_bins.mean(axis=1, keepdims=True)
-        atm_bins_mybackg = atm_bins-atm_mean
-        return pd.DataFrame(atm_bins_mybackg)
+
+        return pd.DataFrame(atm_bins)
     
 def get_back(df):
     atm_mean = df.mean(axis=1, keepdims=True)
@@ -80,14 +74,14 @@ def make_dfs(file, df):
                 i += 1
                 # If we were in night, start a new day DataFrame
                 night_save_path = f'/nfsscratch/Users/wndrsn/atl02Torch/{os.path.basename(file).replace(".h5", "")}_{i}_night.npy'
-                night_dataset = pd.DataFrame(night_data[-1])
-                save_dataframe_to_tensor_file(night_dataset, night_save_path)
+                night_dataset = np.array(night_data[-1])
+                save_dataframe_to_tensor_file(night_dataset-night_dataset.mean(axis=1, keepdims=True), night_save_path)
                 
                 noisy_save_path = f'/nfsscratch/Users/wndrsn/atl02Torch/{os.path.basename(file).replace(".h5", "")}_{i}_noisy.npy'
-                noisy_dataset = make_noisy(night_dataset,4)
+                noisy_dataset = make_noisy(night_dataset*4,8)
                 save_dataframe_to_tensor_file(noisy_dataset,noisy_save_path)
                 
-                bg_dataset = noisy_dataset.mean(axis=1, keepdims=True)
+                bg_dataset = night_dataset.mean(axis=1, keepdims=True)
                 bg_save_path = f'/nfsscratch/Users/wndrsn/atl02Torch/{os.path.basename(file).replace(".h5", "")}_{i}_bg.npy'
                 save_dataframe_to_tensor_file(bg_dataset, bg_save_path)
                 
@@ -104,11 +98,13 @@ def create_dataset(file):
         df2['zenith'] = repeated_zenith_values
         make_dfs(file,df2)
         return 'none'
-    except:
+    except Exception as e:
+        print(e)
         return file
         
 datadir2 = atl02_dir
 datafiles2 = sorted(glob.glob(os.path.join(datadir2, '**/*.h5'), recursive=True))
+
 with futures.ProcessPoolExecutor() as executor:
     atl02_futures = [executor.submit(create_dataset, file) for file in datafiles2]   
     atl02_results = [future.result() for future in tqdm(atl02_futures)]  
